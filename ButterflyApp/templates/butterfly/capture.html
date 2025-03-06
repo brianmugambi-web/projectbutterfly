@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Capture Butterfly</title>
+</head>
+<body>
+    <h1>Capture Butterfly Image</h1>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label>Butterfly Name:</label>
+        <input type="text" name="name" required><br><br>
+
+        <label>Species:</label>
+        <input type="text" name="species"><br><br>
+
+        <label>Characteristics:</label>
+        <textarea name="characteristics"></textarea><br><br>
+
+        <label>Capture Image:</label><br><br>
+        <input type="file" accept="image/*" capture="camera" name="image" required><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
