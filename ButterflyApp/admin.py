@@ -1,3 +1,58 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django import forms
+from django.utils.safestring import mark_safe
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.templatetags.static import static
+from .models import CustomUser, Butterfly, ExpertReview
 
-# Register your models here.
+
+class CustomUserChangeForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ["username", "email", "password", "is_expert", "is_researcher"]
+
+    def clean(self):
+        """Ensure only one role is set."""
+        cleaned_data = super().clean()
+        is_expert = cleaned_data.get("is_expert", False)
+        is_researcher = cleaned_data.get("is_researcher", False)
+
+        # Ensure a user has only one role
+        if is_expert and is_researcher:
+            raise forms.ValidationError("A user cannot be both an expert and a researcher. Please select only one role.")
+        
+        return cleaned_data
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    form = CustomUserChangeForm  # Use the custom form in the admin panel
+
+    list_display = ("username", "email", "get_role", "is_staff")
+    search_fields = ("username", "email")
+    list_filter = ("is_expert", "is_researcher", "is_staff")
+
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal Info", {"fields": ("email",)}),
+        ("User Role", {"fields": ("is_expert", "is_researcher")}),  # Use toggle instead of a custom field
+        ("Permissions", {"fields": ("is_staff", "is_active", "is_superuser")}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": ("username", "email", "password1", "password2", "is_expert", "is_researcher"),
+        }),
+    )
+
+    class Media:
+        """Include custom JavaScript for toggling roles."""
+        js = (static("admin/toggle_roles.js"),)
+
+    def get_role(self, obj):
+        """Show the role in the list display."""
+        return "Expert" if obj.is_expert else "Researcher"
+    
+    get_role.short_description = "Role"

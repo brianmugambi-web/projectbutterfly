@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Expert Dashboard - Pending Reviews ({{ pending_count }})</h2>
+
+    <div class="alert alert-info">
+        <strong>Welcome, {{ user.username }}!</strong>
+        <p>You are logged in as an expert. Below are the pending submissions.</p>
+    </div>
+
+    {% if butterflies %}
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Species</th>
+                <th>Characteristics</th>
+                <th>Media</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for butterfly in butterflies %}
+            <tr>
+                <td>{{ butterfly.name }}</td>
+                <td>{{ butterfly.species|default:"N/A" }}</td>
+                <td>{{ butterfly.characteristics }}</td>
+                <td>
+                    {% if butterfly.image %}
+                        <img src="{{ butterfly.image.url }}" alt="{{ butterfly.name }}" class="img-thumbnail" width="100">
+                    {% elif butterfly.video %}
+                        <video width="150" controls>
+                            <source src="{{ butterfly.video.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% else %}
+                        <span class="text-muted">No Media</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-warning text-dark">Pending</span>
+                </td>
+                <td>
+                    <a href="{% url 'review_butterfly' butterfly.id %}" class="btn btn-success btn-sm">Review</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="alert alert-info text-center">No pending butterfly submissions.</p>
+    {% endif %}
+</div>
+{% endblock %}
