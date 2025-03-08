@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Captured Butterflies</h1>
+<ul>
+    {% for butterfly in butterflies %}
+        <li>
+            <strong>{{ butterfly.name }}</strong> - {{ butterfly.date_taken }}
+            <br>
+            <img src="{{ butterfly.image.url }}" alt="{{ butterfly.name }}" width="150">
+            <br>
+            Location: {{ butterfly.location_name|default:"Unknown" }}
+            <br>
+            Status: <strong>{{ butterfly.status }}</strong>
+        </li>
+    {% empty %}
+        <p>No butterflies captured yet.</p>
+    {% endfor %}
+</ul>
+{% endblock %}

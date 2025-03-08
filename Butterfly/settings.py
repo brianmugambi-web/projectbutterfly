@@ -24,7 +24,6 @@ SECRET_KEY = 'django-insecure-i7r+g-j*iuraxt8!o45on_t)#m&j2*hyp3(b-j4kxfk82mr+p3
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = [
     '192.168.100.6', 
     'e0ae-102-0-7-130.ngrok-free.app', 
@@ -35,6 +34,7 @@ ALLOWED_HOSTS = [
     '75d1-102-0-7-130.ngrok-free.app'
 
 ]
+
 
 
 CSRF_TRUSTED_ORIGINS = [
@@ -70,7 +70,7 @@ ROOT_URLCONF = 'Butterfly.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "ButterflyApp/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -137,3 +137,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication settings
+LOGIN_URL = '/accounts/login/'  # The login page users will be redirected to
+LOGIN_REDIRECT_URL = '/experts/dashboard/'  # Where users go after login
+LOGOUT_REDIRECT_URL = '/'  # Where users go after logout
+AUTH_USER_MODEL = 'ButterflyApp.CustomUser'
+

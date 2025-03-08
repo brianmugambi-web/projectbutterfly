@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Butterfly Project{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Butterfly Validation System</h1>
+        <nav>
+            <ul>
+                {% if user.is_authenticated %}
+                    <li><strong>Welcome, {{ user.username }}</strong></li>
+
+                    {% if user.is_expert %}
+                        <!-- Expert-Specific Navigation -->
+                        <li><a href="{% url 'expert_dashboard' %}">Expert Dashboard</a></li>
+                    {% else %}
+                        <!-- Researcher-Specific Navigation -->
+                        <li><a href="{% url 'butterfly_list' %}">Captured Butterflies</a></li>
+                        <li><a href="{% url 'capture_butterfly' %}">Capture New</a></li>
+                    {% endif %}
+
+                    <li><a href="{% url 'logout' %}">Logout</a></li>
+                {% else %}
+                    <!-- Public Navigation -->
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                    <li><a href="{% url 'signup' %}">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Butterfly Project</p>
+    </footer>
+</body>
+</html>
