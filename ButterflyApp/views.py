@@ -1,20 +1,4 @@
-<<<<<<< HEAD
-from django.shortcuts import render, redirect
-from django.contrib import messages  # Import Django messages
-from .models import Butterfly
-import datetime
-
-from django.core.files.storage import default_storage
-
-def capture_butterfly(request):
-    if request.method == "POST":
-        try:
-            name = request.POST.get("name", "").strip()
-            species = request.POST.get("species", "").strip()
-            characteristics = request.POST.get("characteristics", "").strip()
-            uploaded_file = request.FILES.get("media", None) 
-
-=======
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, authenticate
@@ -23,6 +7,12 @@ from django.contrib import messages
 from .models import Butterfly, ExpertReview, CustomUser
 from .forms import SignupForm
 from datetime import datetime
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def my_view(request):
+    return JsonResponse({"message": "CSRF disabled for this view"})
 
 # ----------------------------------------------
 # 🔹 Utility function to check user role
@@ -39,86 +29,48 @@ def is_expert(user):
 @login_required
 def capture_butterfly(request):
     """Allows researchers to capture butterfly details with location tracking."""
+    
     if is_expert(request.user):  # Prevent experts from capturing
         return redirect("expert_dashboard")
 
     if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        species = request.POST.get("species", "").strip()
+        characteristics = request.POST.get("characteristics", "").strip()
+        
+        # File Handling
+        image = request.FILES.get("media") if "image" in request.FILES.get("media", "").content_type else None
+        video = request.FILES.get("media") if "video" in request.FILES.get("media", "").content_type else None
+
+        # Location Data
+        latitude = request.POST.get("latitude", "").strip()
+        longitude = request.POST.get("longitude", "").strip()
+        location_name = request.POST.get("location_name", "").strip()
+
+        # Validation
+        if not name:
+            messages.error(request, "Name is required.")
+            return redirect("capture_butterfly")
+
+        if not image and not video:
+            messages.error(request, "You must upload either an image or a video.")
+            return redirect("capture_butterfly")
+
         try:
-            name = request.POST.get("name", "").strip()
-            species = request.POST.get("species", "").strip()
-            characteristics = request.POST.get("characteristics", "").strip()
-            image = request.FILES.get("image", None)
-            video = request.FILES.get("video", None)
-
-            # Location data
->>>>>>> experts
-            latitude = request.POST.get("latitude", "").strip()
-            longitude = request.POST.get("longitude", "").strip()
-            location_name = request.POST.get("location_name", "").strip()
-
-<<<<<<< HEAD
-            print("Uploaded Files:", request.FILES)
-            print("Location Data:", latitude, longitude, location_name)
-
-            if not name:
-                messages.error(request, "Name is required.")
-                return redirect("home")
-
-            if uploaded_file is None:
-                messages.error(request, "You must upload an image or video.")
-                return redirect("home")
-
-            # Determine file type (image or video)
-            content_type = uploaded_file.content_type
-            is_image = content_type.startswith("image")
-            is_video = content_type.startswith("video")
-=======
-            if not name:
-                messages.error(request, "Name is required.")
-                return redirect("capture_butterfly")
-
-            if not image and not video:
-                messages.error(request, "You must upload either an image or a video.")
-                return redirect("capture_butterfly")
->>>>>>> experts
-
+            # Creating Butterfly object
             butterfly = Butterfly(
                 name=name,
                 species=species if species else None,
                 characteristics=characteristics,
-<<<<<<< HEAD
-                date_taken=datetime.datetime.now(),
-                latitude=latitude if latitude else None,
-                longitude=longitude if longitude else None,
-                location_name=location_name if location_name else None
-            )
-
-            if is_image:
-                butterfly.image = uploaded_file
-            elif is_video:
-                butterfly.video = uploaded_file
-            
-            butterfly.save()
-
-            messages.success(request, "Butterfly details successfully saved!")
-            return redirect("home")
-
-        except Exception as e:
-            messages.error(request, f"Error saving details: {str(e)}")
-            return redirect("home")
-
-    return render(request, "butterfly/capture.html")
-
-def butterfly_list(request):
-    pass 
-=======
                 date_taken=datetime.now(),
                 latitude=latitude if latitude else None,
                 longitude=longitude if longitude else None,
                 location_name=location_name if location_name else None,
-                status="pending",  # New captures are pending review
+                # status="pending",  # Default new capture as pending
+                # researcher=request.user  # If you want to track user who submitted it
             )
 
+            # Save media file
             if image:
                 butterfly.image = image
             if video:
@@ -126,14 +78,13 @@ def butterfly_list(request):
 
             butterfly.save()
             messages.success(request, "Butterfly details successfully saved!")
-            return redirect("butterfly_list")
+            return redirect("capture_butterfly")  # Redirect to the list of butterflies
 
         except Exception as e:
             messages.error(request, f"Error saving details: {str(e)}")
             return redirect("capture_butterfly")
 
     return render(request, "butterfly/capture.html")
-
 
 @login_required
 def butterfly_list(request):
@@ -250,4 +201,3 @@ def custom_login(request):
 
     form = AuthenticationForm()
     return render(request, "registration/login.html", {"form": form})
->>>>>>> experts
