@@ -4,11 +4,14 @@
 <div class="container mt-4">
     <h2>Review Butterfly Submission</h2>
     <div class="card shadow-sm p-4">
+        
         <div class="text-center">
             {% if butterfly.image %}
-                <img src="{{ butterfly.image.url }}" alt="{{ butterfly.name }}" class="img-fluid rounded mb-3" width="300">
+                <div class="image-container mb-3">
+                    <img src="{{ butterfly.image.url }}" alt="Butterfly Image" class="img-fluid rounded" width="400">
+                </div>
             {% elif butterfly.video %}
-                <video width="300" controls>
+                <video width="400" controls>
                     <source src="{{ butterfly.video.url }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -16,7 +19,7 @@
                 <p class="text-muted">No media available.</p>
             {% endif %}
         </div>
-        
+
         <p><strong>Name:</strong> {{ butterfly.name }}</p>
         <p><strong>Species:</strong> {{ butterfly.species }}</p>
         <p><strong>Characteristics:</strong> {{ butterfly.characteristics }}</p>

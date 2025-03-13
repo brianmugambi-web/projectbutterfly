@@ -16,7 +16,6 @@
                 <th>Name</th>
                 <th>Species</th>
                 <th>Characteristics</th>
-                <th>Media</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -27,18 +26,6 @@
                 <td>{{ butterfly.name }}</td>
                 <td>{{ butterfly.species|default:"N/A" }}</td>
                 <td>{{ butterfly.characteristics }}</td>
-                <td>
-                    {% if butterfly.image %}
-                        <img src="{{ butterfly.image.url }}" alt="{{ butterfly.name }}" class="img-thumbnail" width="100">
-                    {% elif butterfly.video %}
-                        <video width="150" controls>
-                            <source src="{{ butterfly.video.url }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% else %}
-                        <span class="text-muted">No Media</span>
-                    {% endif %}
-                </td>
                 <td>
                     <span class="badge bg-warning text-dark">Pending</span>
                 </td>
