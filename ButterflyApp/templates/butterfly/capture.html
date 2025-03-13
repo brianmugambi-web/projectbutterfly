@@ -1,443 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Capture Butterfly</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        video, canvas {
-            max-width: 100%;
-            border-radius: 10px;
-        }
-    
-        #previewContainer img, #previewContainer video {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-        }
-    
-        #captureButtonsContainer {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-    
-        #startRecordingBtn:hover {
-            background-color: #198754;
-            color: #fff;
-            border-color: #198754;
-            transform: scale(1.05);
-            transition: all 0.3s ease;
-        }
-    
-        #stopRecordingBtn:hover {
-            background-color: #dc3545;
-            color: #fff;
-            border-color: #dc3545;
-            transform: scale(1.05);
-            transition: all 0.3s ease;
-        }
-    
-        #startRecordingBtn:active,
-        #stopRecordingBtn:active {
-            transform: scale(0.95);
-        }
-    
-        /* MODERN SUBMIT BUTTON STYLE (WIDE) */
-        .modern-submit-btn {
-            background-color: #0d6efd;
-            color: #fff;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
-            transition: all 0.3s ease;
-            width: 100%; /* Make button full width */
-            max-width: 400px; /* Optional: Set a max width for desktop */
-            display: block;
-            margin: 0 auto; /* Center the button horizontally */
-        }
-    
-        .modern-submit-btn:hover {
-            background-color: #0b5ed7;
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 6px 20px rgba(13, 110, 253, 0.5);
-        }
-    
-        .modern-submit-btn:active {
-            transform: translateY(0px) scale(0.98);
-            box-shadow: 0 2px 10px rgba(13, 110, 253, 0.3);
-        }
-    </style>
-    
-    
-    
-    
 </head>
-
 <body class="bg-light">
     <div class="container mt-5">
         <div class="card shadow-lg p-4">
-            <h2 class="text-center mb-4">Capture Details</h2>
+            <h2 class="text-center mb-4">Capture</h2>
 
-            <!-- FORM START -->
-            <form id="captureForm" method="POST" enctype="multipart/form-data">
+            {% if messages %}
+                <div class="container mt-3">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-
-                <!-- Name -->
+                
                 <div class="mb-3">
-                    <label for="name" class="form-label">Name:</label>
-                    <input type="text" name="name" id="name" class="form-control" required>
+                    <label class="form-label">Name:</label>
+                    <input type="text" name="name" class="form-control" required>
                 </div>
-
-                <!-- Species -->
+                
                 <div class="mb-3">
-                    <label for="species" class="form-label">Species:</label>
-                    <input type="text" name="species" id="species" class="form-control">
+                    <label class="form-label">Species:</label>
+                    <input type="text" name="species" class="form-control">
                 </div>
-
-                <!-- Characteristics -->
+                
                 <div class="mb-3">
-                    <label for="characteristics" class="form-label">Characteristics:</label>
-                    <textarea name="characteristics" id="characteristics" class="form-control" rows="3"></textarea>
+                    <label class="form-label">Characteristics:</label>
+                    <textarea name="characteristics" class="form-control" rows="3"></textarea>
                 </div>
-
-                <!-- Hidden Location Inputs -->
+            
+                <!-- Hidden fields for storing user location -->
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
                 <input type="hidden" name="location_name" id="location_name">
 
-                <!-- Location Display -->
                 <div class="mb-3">
                     <label class="form-label">Location:</label>
                     <p id="locationDisplay" class="text-muted">Fetching location...</p>
                 </div>
-
-                <!-- Mode Selection -->
+            
+                <!-- Toggle Buttons -->
                 <div class="mb-3">
                     <label class="form-label">Select Mode:</label><br>
-                    <button type="button" class="btn btn-primary me-2" id="selectImageModeBtn">Images</button>
-                    <button type="button" class="btn btn-outline-secondary" id="selectVideoModeBtn">Videos</button>
+                    <button type="button" class="btn btn-outline-primary me-2" id="captureImageBtn">Capture Image</button>
+                    <button type="button" class="btn btn-outline-secondary" id="captureVideoBtn">Record Video</button>
                 </div>
-
-                <!-- Camera Stream -->
-                <div class="mb-3 d-none" id="cameraStreamContainer">
-                    <video id="videoStream" autoplay muted playsinline class="w-100 border"></video>
-                    <canvas id="snapshotCanvas" class="d-none"></canvas>
+            
+                <!-- Single File Input -->
+                <div class="mb-3">
+                    <label class="form-label" id="fileLabel">Capture Image:</label>
+                    <input type="file" accept="image/*" capture="camera" name="media" class="form-control" id="mediaInput">
                 </div>
-                
-                
-                <!-- Capture Buttons -->
-                <div class="mb-3" id="captureButtonsContainer">
-                    <button type="button" class="btn btn-outline-primary d-none" id="captureImageBtn">Capture Image</button>
-                    <button type="button" class="btn btn-outline-secondary d-none" id="startRecordingBtn">Start Recording</button>
-                    <button type="button" class="btn btn-outline-danger d-none" id="stopRecordingBtn">Stop Recording</button>
-                </div>
-                
-                <!-- Media Previews -->
-                <div id="previewContainer" class="mb-3 d-flex flex-wrap gap-3 border rounded p-3 bg-white shadow-sm" style="min-height: 150px;">
-                    <p id="previewPlaceholder" class="text-muted">No media captured yet.</p>
-                </div>
-
-                <!-- Submit Button -->
+            
                 <div class="text-center">
-                    <button type="submit" class="btn btn-success modern-submit-btn w-100">
-                        <i class="fas fa-paper-plane"></i> Submit
-                    </button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
-                
-                
             </form>
-            <!-- FORM END -->
         </div>
     </div>
 
+    <!-- JavaScript to handle media selection -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-    
-            // DOM Elements
-            const selectImageModeBtn = document.getElementById("selectImageModeBtn");
-            const selectVideoModeBtn = document.getElementById("selectVideoModeBtn");
+            document.addEventListener("DOMContentLoaded", function() {
+            const mediaInput = document.getElementById("mediaInput");
+            const fileLabel = document.getElementById("fileLabel");
             const captureImageBtn = document.getElementById("captureImageBtn");
-            const startRecordingBtn = document.getElementById("startRecordingBtn");
-            const stopRecordingBtn = document.getElementById("stopRecordingBtn");
-    
-            const videoStream = document.getElementById("videoStream");
-            const snapshotCanvas = document.getElementById("snapshotCanvas");
-            const previewContainer = document.getElementById("previewContainer");
-            const previewPlaceholder = document.getElementById("previewPlaceholder");
-    
-            let mediaArray = [];  // Stores the captured images/videos (Blobs)
-            let currentMode = "image";
-            let stream = null;
-            let mediaRecorder = null;
-            let recordedChunks = [];
-    
-            // --- Mode Switching ---
-            selectImageModeBtn.addEventListener("click", () => setMode("image"));
-            selectVideoModeBtn.addEventListener("click", () => setMode("video"));
-    
-            function setMode(mode) {
-                currentMode = mode;
-                clearPreview();
-                showPlaceholder();
-    
-                const cameraStreamContainer = document.getElementById("cameraStreamContainer");
-    
-                if (mode === "image") {
-                    selectImageModeBtn.classList.replace("btn-outline-secondary", "btn-primary");
-                    selectVideoModeBtn.classList.replace("btn-primary", "btn-outline-secondary");
-    
-                    captureImageBtn.classList.remove("d-none");
-                    startRecordingBtn.classList.add("d-none");
-                    stopRecordingBtn.classList.add("d-none");
-    
-                    cameraStreamContainer.classList.remove("d-none");
-    
-                } else if (mode === "video") {
-                    selectVideoModeBtn.classList.replace("btn-outline-secondary", "btn-primary");
-                    selectImageModeBtn.classList.replace("btn-primary", "btn-outline-secondary");
-    
-                    captureImageBtn.classList.add("d-none");
-                    startRecordingBtn.classList.remove("d-none");
-                    stopRecordingBtn.classList.remove("d-none");
-    
-                    cameraStreamContainer.classList.remove("d-none");
-                }
-    
-                startCamera();
-            }
-    
-            // --- Camera Access ---
-            async function startCamera() {
-                try {
-                    if (stream) {
-                        stream.getTracks().forEach(track => track.stop());
-                    }
-    
-                    const constraints = {
-                        video: {
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 },
-                            facingMode: "environment"
-                        },
-                        audio: currentMode === "video"
-                    };
-    
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    videoStream.srcObject = stream;
-    
-                    videoStream.onloadedmetadata = () => {
-                        videoStream.play();
-                    };
-    
-                } catch (error) {
-                    alert("Could not access the camera: " + error.message);
-                    console.error(error);
-                }
-            }
-    
-            // --- Capture Image ---
-            captureImageBtn.addEventListener("click", () => {
-                if (!stream) {
-                    alert("Camera not started!");
-                    return;
-                }
-    
-                const context = snapshotCanvas.getContext("2d");
-                snapshotCanvas.width = videoStream.videoWidth;
-                snapshotCanvas.height = videoStream.videoHeight;
-    
-                context.drawImage(videoStream, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-    
-                snapshotCanvas.toBlob(blob => {
-                    if (blob) {
-                        mediaArray.push(blob);
-                        addPreviewImage(blob);
-                    } else {
-                        alert("Failed to capture image. Please try again.");
-                    }
-                }, "image/jpeg", 0.95);
+            const captureVideoBtn = document.getElementById("captureVideoBtn");
+            const form = document.querySelector("form");
+
+            // Default mode: Image capture
+            mediaInput.accept = "image/*";
+            mediaInput.setAttribute("capture", "camera");
+
+            // Switch to Image Capture
+            captureImageBtn.addEventListener("click", function() {
+                mediaInput.accept = "image/*";
+                mediaInput.setAttribute("capture", "camera");
+                fileLabel.innerText = "Capture Image:";
+                captureImageBtn.classList.add("btn-primary");
+                captureImageBtn.classList.remove("btn-outline-primary");
+                captureVideoBtn.classList.add("btn-outline-secondary");
+                captureVideoBtn.classList.remove("btn-primary");
             });
-    
-            function addPreviewImage(blob) {
-                const url = URL.createObjectURL(blob);
-                const img = document.createElement("img");
-                img.src = url;
-                img.classList.add("img-thumbnail");
-                previewContainer.appendChild(img);
-                hidePlaceholder();
-            }
-    
-            // --- Record Video ---
-            startRecordingBtn.addEventListener("click", () => {
-                if (!stream) return alert("Camera not started");
-    
-                recordedChunks = [];
-                mediaRecorder = new MediaRecorder(stream);
-    
-                mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: "video/webm" });
-                    mediaArray.push(blob);
-                    addPreviewVideo(blob);
-                };
-    
-                mediaRecorder.start();
-                startRecordingBtn.disabled = true;
-                stopRecordingBtn.disabled = false;
+
+            // Switch to Video Recording
+            captureVideoBtn.addEventListener("click", function() {
+                mediaInput.accept = "video/*";
+                mediaInput.setAttribute("capture", "camera");
+                fileLabel.innerText = "Record Video:";
+                captureVideoBtn.classList.add("btn-primary");
+                captureVideoBtn.classList.remove("btn-outline-secondary");
+                captureImageBtn.classList.add("btn-outline-primary");
+                captureImageBtn.classList.remove("btn-primary");
             });
-    
-            stopRecordingBtn.addEventListener("click", () => {
-                if (mediaRecorder) {
-                    mediaRecorder.stop();
-                    startRecordingBtn.disabled = false;
-                    stopRecordingBtn.disabled = true;
-                }
-            });
-    
-            function addPreviewVideo(blob) {
-                const url = URL.createObjectURL(blob);
-                const video = document.createElement("video");
-                video.src = url;
-                video.controls = true;
-                previewContainer.appendChild(video);
-                hidePlaceholder();
-            }
-    
-            // --- Helpers ---
-            function clearPreview() {
-                previewContainer.innerHTML = "";
-                mediaArray = [];
-            }
-    
-            function showPlaceholder() {
-                previewPlaceholder.classList.remove("d-none");
-            }
-    
-            function hidePlaceholder() {
-                previewPlaceholder.classList.add("d-none");
-            }
-    
-            // --- Location Handling ---
+
             function getLocation() {
                 if ("geolocation" in navigator) {
                     navigator.geolocation.getCurrentPosition(
-                        (position) => {
+                        function (position) {
                             const latitude = position.coords.latitude;
                             const longitude = position.coords.longitude;
-                            const apiKey = "pk.352ae89b7020e77419ca3154788b3037";
-    
+                            const apiKey = "pk.352ae89b7020e77419ca3154788b3037";  // Replace with your API key
+
                             document.getElementById("latitude").value = latitude;
                             document.getElementById("longitude").value = longitude;
-    
+
+                            // Fetch location name using LocationIQ API
                             const url = `https://us1.locationiq.com/v1/reverse.php?key=${apiKey}&lat=${latitude}&lon=${longitude}&format=json`;
-    
+
                             fetch(url)
-                                .then(res => res.json())
+                                .then(response => response.json())
                                 .then(data => {
                                     const locationName = data.display_name;
                                     document.getElementById("location_name").value = locationName;
                                     document.getElementById("locationDisplay").innerText = locationName;
                                 })
-                                .catch(() => {
+                                .catch(error => {
+                                    console.error("Error fetching location:", error);
                                     document.getElementById("locationDisplay").innerText = "Unable to fetch location.";
                                 });
                         },
-                        () => {
+                        function (error) {
+                            console.error("Error getting location:", error);
                             document.getElementById("locationDisplay").innerText = "Location access denied.";
                         }
                     );
                 } else {
-                    alert("Geolocation is not supported by your browser.");
+                    alert("Geolocation is not supported by this browser.");
                 }
             }
-    
-            getLocation();
-    
-            // --- Form Submit Handling ---
-            const form = document.getElementById("captureForm");
-    
-            form.addEventListener("submit", (event) => {
-                event.preventDefault();
-    
+
+            // Ensure location is fetched before submitting the form
+            form.addEventListener("submit", function (event) {
                 const latitude = document.getElementById("latitude").value;
                 const longitude = document.getElementById("longitude").value;
-    
+
                 if (!latitude || !longitude) {
-                    alert("Fetching location... Please allow access and try again.");
-                    getLocation();
-                    return;
+                    event.preventDefault(); // Prevent form submission
+                    alert("Fetching location... Please allow location access and try again.");
+                    getLocation(); // Retry fetching location
                 }
-    
-                if (mediaArray.length === 0) {
-                    alert("You must capture at least one image or video.");
-                    return;
-                }
-    
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-                const formData = new FormData();
-                formData.append("name", document.getElementById("name").value);
-                formData.append("species", document.getElementById("species").value);
-                formData.append("characteristics", document.getElementById("characteristics").value);
-    
-                formData.append("latitude", latitude);
-                formData.append("longitude", longitude);
-                formData.append("location_name", document.getElementById("location_name").value);
-    
-                // Append media files
-                mediaArray.forEach((blob, index) => {
-                    const fileType = blob.type.startsWith("image/") ? "image" : "video";
-                    const filename = `${fileType}_${Date.now()}_${index}.${fileType === "image" ? "jpg" : "webm"}`;
-    
-                    const file = new File([blob], filename, { type: blob.type });
-                    formData.append("media", file);  // Django: request.FILES.getlist("media")
-                });
-    
-                // Send form data via fetch
-                fetch(form.action || window.location.href, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrfToken
-                    },
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.text();  // If JSON, use .json() instead
-                })
-                .then(data => {
-                    alert("Details successfully submitted!");
-    
-                    // Reset the form and UI
-                    form.reset();
-                    clearPreview();
-                    showPlaceholder();
-                    getLocation();  // Refresh location if needed
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("There was an error submitting your form. Please try again.");
-                });
             });
-    
-            // Initialize camera on page load
-            startCamera();
-            setMode("image");
-    
+
+            getLocation(); // Fetch location when the page loads
         });
+
     </script>
-    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>

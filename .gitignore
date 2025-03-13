@@ -1,0 +1,7 @@
+# Ignore SQL DB
+db.sqlite3
+# Or, if it’s in a folder:
+data/database.sql
+
+# Ignore requirements.txt
+requirements.txt

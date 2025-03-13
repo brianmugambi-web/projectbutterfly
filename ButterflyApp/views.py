@@ -4,10 +4,9 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from .models import Butterfly, ButterflyMedia, ExpertReview, CustomUser
+from .models import Butterfly, ExpertReview, CustomUser
 from .forms import SignupForm
-from django.utils import timezone
-
+from datetime import datetime
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -27,101 +26,65 @@ def is_expert(user):
 # 🔹 RESEARCHERS & ENTHUSIASTS VIEWS
 # ----------------------------------------------
 
-
-
-
 @login_required
 def capture_butterfly(request):
     """Allows researchers to capture butterfly details with location tracking."""
-
+    
     if is_expert(request.user):  # Prevent experts from capturing
         return redirect("expert_dashboard")
 
     if request.method == "POST":
-        # Fetch text fields
         name = request.POST.get("name", "").strip()
         species = request.POST.get("species", "").strip()
         characteristics = request.POST.get("characteristics", "").strip()
+        
+        # File Handling
+        image = request.FILES.get("media") if "image" in request.FILES.get("media", "").content_type else None
+        video = request.FILES.get("media") if "video" in request.FILES.get("media", "").content_type else None
 
         # Location Data
         latitude = request.POST.get("latitude", "").strip()
         longitude = request.POST.get("longitude", "").strip()
         location_name = request.POST.get("location_name", "").strip()
 
-        # Media files
-        media_files = request.FILES.getlist("media")
-
-        # --- Logging received data ---
-        print("==== Received Data from Frontend ====")
-        print(f"Name: {name}")
-        print(f"Species: {species}")
-        print(f"Characteristics: {characteristics}")
-        print(f"Latitude: {latitude}")
-        print(f"Longitude: {longitude}")
-        print(f"Location Name: {location_name}")
-
-        print("\nUploaded Media Files:")
-        if not media_files:
-            print("No media files received.")
-        else:
-            for idx, file in enumerate(media_files, start=1):
-                print(f"{idx}. Filename: {file.name}, Content Type: {file.content_type}, Size: {file.size} bytes")
-
-        print("=====================================\n")
-        # --- End logging ---
-
         # Validation
         if not name:
             messages.error(request, "Name is required.")
             return redirect("capture_butterfly")
 
-        if not media_files:
-            messages.error(request, "You must upload at least one image or video.")
+        if not image and not video:
+            messages.error(request, "You must upload either an image or a video.")
             return redirect("capture_butterfly")
 
         try:
-            # Create the Butterfly object
-            butterfly = Butterfly.objects.create(
+            # Creating Butterfly object
+            butterfly = Butterfly(
                 name=name,
                 species=species if species else None,
                 characteristics=characteristics,
-                date_taken=timezone.now(),
+                date_taken=datetime.now(),
                 latitude=latitude if latitude else None,
                 longitude=longitude if longitude else None,
                 location_name=location_name if location_name else None,
-                status="pending",
-                researcher=request.user  # Optional
+                # status="pending",  # Default new capture as pending
+                # researcher=request.user  # If you want to track user who submitted it
             )
 
-            # Process each uploaded file
-            for file in media_files:
-                content_type = file.content_type
+            # Save media file
+            if image:
+                butterfly.image = image
+            if video:
+                butterfly.video = video
 
-                if content_type.startswith("image/"):
-                    media_type = "image"
-                elif content_type.startswith("video/"):
-                    media_type = "video"
-                else:
-                    messages.warning(request, f"Unsupported file type: {content_type}")
-                    continue
-
-                # Save media file (link it to the butterfly)
-                ButterflyMedia.objects.create(
-                    butterfly=butterfly,
-                    media_file=file,
-                    media_type=media_type
-                )
-
-            messages.success(request, "Butterfly details and media successfully saved!")
-            return redirect("capture_butterfly")
+            butterfly.save()
+            messages.success(request, "Butterfly details successfully saved!")
+            return redirect("capture_butterfly")  # Redirect to the list of butterflies
 
         except Exception as e:
             messages.error(request, f"Error saving details: {str(e)}")
-            print("Error in saving data:", str(e))  # Logging the exception
             return redirect("capture_butterfly")
 
     return render(request, "butterfly/capture.html")
-
 
 @login_required
 def butterfly_list(request):
