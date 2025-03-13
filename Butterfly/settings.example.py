@@ -30,11 +30,13 @@ ALLOWED_HOSTS = [
     'db19-102-216-154-16.ngrok-free.app',
     'e0ae-102-0-7-130.ngrok-free.app', 
     'e0ae-102-210-28-39.ngrok-free.app',  
+    '192.168.100.57',
+    '192.168.100.6',
+    'b42f-102-210-28-36.ngrok-free.app',
+    'b59f-102-216-154-16.ngrok-free.app',
     'localhost',
     '127.0.0.1',
     '192.168.100.56',
-    '75d1-102-0-7-130.ngrok-free.app',
-    '6895-102-216-154-60.ngrok-free.app'
 
 ]
 
@@ -44,10 +46,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://db19-102-216-154-16.ngrok-free.app',
     'https://6895-102-216-154-60.ngrok-free.app',
     'https://75d1-102-0-7-130.ngrok-free.app',
+    'https://b42f-102-210-28-36.ngrok-free.app',
     'http://192.168.100.56',
     'http://192.168.100.57:8000',
-    
-
 ]
 # Application definition
 
@@ -154,3 +155,5 @@ AUTH_USER_MODEL = 'ButterflyApp.CustomUser'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'butterflies/images')
+DATA_UPLOAD_MAX_MEMORY_SIZE = 524288000  # 500MB total request size
+FILE_UPLOAD_MAX_MEMORY_SIZE = 262144000  # 250MB per file (adjust as needed)
