@@ -7,3 +7,7 @@ Butterfly/settings.py
 
 # Ignore dependencies file
 requirements.txt
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
