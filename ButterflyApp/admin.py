@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.templatetags.static import static
 from .models import CustomUser, Butterfly, ExpertReview
-
+from .models import Butterfly, ButterflyMedia, ExpertReview
 
 class CustomUserChangeForm(forms.ModelForm):
     class Meta:
@@ -56,3 +56,24 @@ class CustomUserAdmin(UserAdmin):
         return "Expert" if obj.is_expert else "Researcher"
     
     get_role.short_description = "Role"
+
+@admin.register(Butterfly)
+class ButterflyAdmin(admin.ModelAdmin):
+    list_display = ("name", "species", "status", "researcher", "date_taken")
+    list_filter = ("status", "species")
+    search_fields = ("name", "species", "location_name")
+    ordering = ("-date_taken",)
+
+@admin.register(ButterflyMedia)
+class ButterflyMediaAdmin(admin.ModelAdmin):
+    list_display = ("butterfly", "media_type", "status", "uploaded_at")
+    list_filter = ("media_type", "status")
+    search_fields = ("butterfly__name",)
+    ordering = ("-uploaded_at",)
+
+@admin.register(ExpertReview)
+class ExpertReviewAdmin(admin.ModelAdmin):
+    list_display = ("butterfly", "expert", "species_identification", "decision", "review_date")
+    list_filter = ("decision",)
+    search_fields = ("butterfly__name", "expert__username")
+    ordering = ("-review_date",)

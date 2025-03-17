@@ -1,9 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.conf import settings
-
 from django.utils import timezone
-
 
 
 class CustomUser(AbstractUser):  # Unified user model
@@ -18,17 +16,14 @@ class CustomUser(AbstractUser):  # Unified user model
         return f"{self.username} ({'Expert' if self.is_expert else 'Researcher'})"
 
 
-
-
-
 class Butterfly(models.Model):
     name = models.CharField(max_length=255)
     species = models.CharField(max_length=255, blank=True, null=True)
     characteristics = models.TextField()
 
-    # Optional fields for single media
-    image = models.ImageField(upload_to="butterflies/images/", blank=True, null=True)
-    video = models.FileField(upload_to="butterflies/videos/", blank=True, null=True)
+    # ✅ Store all media in the same `butterflies/media/` folder
+    image = models.ImageField(upload_to="butterflies/media/", blank=True, null=True)
+    video = models.FileField(upload_to="butterflies/media/", blank=True, null=True)
 
     date_taken = models.DateTimeField(auto_now_add=True)
 
@@ -42,7 +37,6 @@ class Butterfly(models.Model):
         default="pending"
     )
 
-    # ✅ Fixed researcher relation
     researcher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -61,13 +55,18 @@ class ButterflyMedia(models.Model):
         ("video", "Video"),
     ]
 
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    ]
+
     butterfly = models.ForeignKey(Butterfly, on_delete=models.CASCADE, related_name='media')
-    media_file = models.FileField(upload_to="butterflies/media/")
+    media_file = models.FileField(upload_to="butterflies/media/")  # ✅ Ensures consistency in storage
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES)
-
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")  # NEW FIELD
 
-    # ✅ Fixed researcher relation
     researcher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -77,17 +76,16 @@ class ButterflyMedia(models.Model):
     )
 
     def __str__(self):
-        return f"{self.media_type.capitalize()} for {self.butterfly.name}"
+        return f"{self.media_type.capitalize()} for {self.butterfly.name} - {self.status}"
 
 
-    
 class ExpertReview(models.Model):
     butterfly = models.ForeignKey(Butterfly, on_delete=models.CASCADE)
     expert = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'is_expert': True})
     feedback = models.TextField()
     species_identification = models.CharField(max_length=255, blank=True, null=True)
     review_date = models.DateTimeField(auto_now_add=True)
-    decision = models.CharField(  # Field for expert decision
+    decision = models.CharField(
         max_length=10,
         choices=[("accept", "Accept"), ("reject", "Reject")],
         default="reject"
@@ -95,4 +93,3 @@ class ExpertReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.expert.username} on {self.butterfly.name} - {self.decision}"
-

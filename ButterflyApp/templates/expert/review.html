@@ -4,17 +4,44 @@
 <div class="container mt-4">
     <h2>Review Butterfly Submission</h2>
     <div class="card shadow-sm p-4">
-        
+
         <div class="text-center">
-            {% if butterfly.image %}
-                <div class="image-container mb-3">
-                    <img src="{{ butterfly.image.url }}" alt="Butterfly Image" class="img-fluid rounded" width="400">
+            {% if butterfly.media.all %}
+                <div id="imageCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for media in butterfly.media.all %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}" data-media-id="{{ media.id }}">
+                            {% if media.media_type == "image" %}
+                                <img src="{{ media.media_file.url }}" class="d-block mx-auto rounded media-item img-thumbnail"
+                                    style="max-width: 400px; height: auto;" data-id="{{ media.id }}">
+                            {% elif media.media_type == "video" %}
+                                <video class="d-block mx-auto media-item rounded" controls data-id="{{ media.id }}" style="max-width: 400px; height: auto;">
+                                    <source src="{{ media.media_file.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% endif %}
+
+                            <!-- Image Validation Controls Inside Carousel -->
+                            <div class="mt-3">
+                                <label class="me-3">
+                                    <input type="radio" name="decision_{{ media.id }}" value="accepted" required> Accept
+                                </label>
+                                <label>
+                                    <input type="radio" name="decision_{{ media.id }}" value="rejected"> Reject
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev" style="filter: invert(100%);">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next" style="filter: invert(100%);">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    </button>
+                    
                 </div>
-            {% elif butterfly.video %}
-                <video width="400" controls>
-                    <source src="{{ butterfly.video.url }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
             {% else %}
                 <p class="text-muted">No media available.</p>
             {% endif %}
@@ -24,24 +51,20 @@
         <p><strong>Species:</strong> {{ butterfly.species }}</p>
         <p><strong>Characteristics:</strong> {{ butterfly.characteristics }}</p>
 
-        <form method="POST" onsubmit="return confirmReview()">
+        <form id="reviewForm" method="POST" onsubmit="return confirmReview()">
             {% csrf_token %}
+
             <div class="mb-3">
                 <label for="species_identification" class="form-label">Species Identification (Optional):</label>
                 <input type="text" name="species_identification" class="form-control" placeholder="Enter species name">
             </div>
+
             <div class="mb-3">
                 <label for="feedback" class="form-label">Expert Feedback:</label>
                 <textarea name="feedback" class="form-control" rows="3" required placeholder="Provide feedback..."></textarea>
             </div>
-            <div class="mb-3">
-                <label for="decision" class="form-label">Approval Status:</label>
-                <select name="decision" class="form-select" required>
-                    <option value="validated">Approve</option>
-                    <option value="rejected">Reject</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-success w-100">Submit Review</button>
+
+            <button type="submit" class="btn btn-success w-100 mt-3">Submit Review</button>
         </form>
     </div>
 </div>
@@ -50,5 +73,14 @@
     function confirmReview() {
         return confirm("Are you sure you want to submit this review?");
     }
+
+    // Highlight Selected Image
+    document.querySelectorAll(".media-item").forEach(item => {
+        item.addEventListener("click", function() {
+            document.querySelectorAll(".media-item").forEach(el => el.classList.remove("border", "border-primary"));
+            this.classList.add("border", "border-primary");
+        });
+    });
 </script>
+
 {% endblock %}
